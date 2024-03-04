@@ -1,1 +1,1 @@
-## A Food Delivery App API with Fastapi
+## A Pizza Delivery App API with Fastapi
