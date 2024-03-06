@@ -14,11 +14,20 @@ auth_route = APIRouter(
 )
 
 session = SessionLocal(bind=engine)
+
+#defaul auth route
 @auth_route.get('/')
-async def authenticate():
-	return {"Auth Route": "Authenicate Pls"}
+async def home(Authorize:AuthJWT=Depends()):
+    try:
+        Authorize.jwt_required()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid Token")
+    
+    return {"Home": "Hello World!"}
 
 
+#signup route
 @auth_route.post('/signup', status_code=status.HTTP_201_CREATED)
 async def signup(user: SignUpModel):
     db_email = session.query(User).filter(User.email==user.email).first()
@@ -48,7 +57,7 @@ async def signup(user: SignUpModel):
     
     return new_user
 
-
+# login route 
 @auth_route.post('/login', status_code=200)
 async def login(user: LoginModel, Authorize:AuthJWT=Depends()):
      db_user = session.query(User).filter(User.username == user.username).first()
@@ -65,3 +74,19 @@ async def login(user: LoginModel, Authorize:AuthJWT=Depends()):
           status_code=status.HTTP_400_BAD_REQUEST,
           detail="Invalid username or password"
           )
+
+
+# refresh token route
+@auth_route.get('/refresh')
+async def refresh(Authorize:AuthJWT=Depends()):
+    try:
+        Authorize.jwt_refresh_token_required()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token"
+        )
+    current_user = Authorize.get_jwt_subject()
+    access_token = Authorize.create_access_token(subject=current_user)
+
+    return jsonable_encoder({"access token": access_token})
