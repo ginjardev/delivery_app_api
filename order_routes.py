@@ -104,3 +104,48 @@ async def get_user_orders(Authorize:AuthJWT=Depends()):
     user = session.query(User).filter(User.username==current_user).first()
     
     return jsonable_encoder(user.orders)
+
+
+@order_route.get('/user/order/{id}')
+async def get_specific_order(id: int, Authorize:AuthJWT=Depends()):
+    try:
+        Authorize.jwt_required()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+		)
+    current_user = Authorize.get_jwt_subject()
+    
+    user = session.query(User).filter(User.username==current_user).first()
+    
+    orders = user.orders
+    
+    for order in orders:
+        if order.id == id:
+            return jsonable_encoder(order)
+    
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="No order with that id"
+	)
+
+
+@order_route.put('/order/update/{id}')
+async def update_order(id:int, order:OrderModel, Authorize:AuthJWT=Depends()):
+    try:
+        Authorize.jwt_required()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail= "Invalid token"
+		)
+    
+    update_order=session.query(Order).filter(Order.id == id).first()
+    
+    update_order.quantity = order.quantity
+    update_order.pizza_size = order.pizza_size
+    
+    session.commit()
+    
+    return jsonable_encoder(update_order)
