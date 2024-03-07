@@ -140,15 +140,20 @@ async def update_order(id:int, order:OrderModel, Authorize:AuthJWT=Depends()):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail= "Invalid token"
 		)
-    
+
     update_order=session.query(Order).filter(Order.id == id).first()
-    
+
     update_order.quantity = order.quantity
     update_order.pizza_size = order.pizza_size
-    
+
     session.commit()
-    
-    return jsonable_encoder(update_order)
+    response = {
+        "id": update_order.id,
+        "quantity": update_order.quantity,
+        "pizza_size": update_order.pizza_size,
+        "order_status": update_order.order_status,
+    }
+    return jsonable_encoder(response)
 
 
 @order_route.patch('/order/status/{id}')
@@ -160,13 +165,19 @@ async def update_order_status(id:int,order:OrderStatusModel, Authorize:AuthJWT=D
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Token"
 		)
-    
+
     current_user = Authorize.get_jwt_subject()
     user = session.query(User).filter(User.username==current_user).first()
-    
+
     if user.is_staff:
         update_order=session.query(Order).filter(Order.id==id).first()
-        
+
         update_order.order_status=order.order_status
         session.commit()
-        return jsonable_encoder(update_order)
+        response = {
+            "id": update_order.id,
+            "quantity": update_order.quantity, 
+            "pizza_size": update_order.pizza_size,
+            "order_status": update_order.order_status
+            }
+        return jsonable_encoder(response)
