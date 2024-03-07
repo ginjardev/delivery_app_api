@@ -15,21 +15,33 @@ auth_route = APIRouter(
 
 session = SessionLocal(bind=engine)
 
-#defaul auth route
+# defaul auth route
 @auth_route.get('/')
 async def home(Authorize:AuthJWT=Depends()):
+    """# This endpoint returns a default auth route
+    """
     try:
         Authorize.jwt_required()
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid Token")
-    
+
     return {"Home": "Hello World!"}
 
 
-#signup route
+# signup route
 @auth_route.post('/signup', status_code=status.HTTP_201_CREATED)
 async def signup(user: SignUpModel):
+    """# This endpoint creates a User
+    This would require:
+    ```
+        username: str
+        email: str
+        password: str
+        is_staff: Optional[bool]
+        is_active: Optional[bool]
+    ```
+    """
     db_email = session.query(User).filter(User.email==user.email).first()
     if db_email is not None:
         return HTTPException(
@@ -43,7 +55,7 @@ async def signup(user: SignUpModel):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with that username exits",
         )
-    
+
     new_user = User(
           username = user.username,
           email = user.email,
@@ -51,26 +63,34 @@ async def signup(user: SignUpModel):
           is_staff = user.is_staff,
           is_active = user.is_active
 	)
-    
+
     session.add(new_user)
     session.commit()
-    
+
     return new_user
 
-# login route 
+# login route
 @auth_route.post('/login', status_code=200)
 async def login(user: LoginModel, Authorize:AuthJWT=Depends()):
-     db_user = session.query(User).filter(User.username == user.username).first()
-     if db_user and check_password_hash(db_user.password, user.password):
-          access_token = Authorize.create_access_token(subject=db_user.username)
-          refresh_token = Authorize.create_refresh_token(subject=db_user.username)
+    """# This endpoint logs in a User
+    This would require:
+    ```
+        username: str
+        password: str
+    ```
+    An `access` and `refresh` tokens are returned on log in
+    """
+    db_user = session.query(User).filter(User.username == user.username).first()
+    if db_user and check_password_hash(db_user.password, user.password):
+        access_token = Authorize.create_access_token(subject=db_user.username)
+        refresh_token = Authorize.create_refresh_token(subject=db_user.username)
 
-          response = {
+        response = {
                "access": access_token,
                "refresh": refresh_token
           }
-          return jsonable_encoder(response)
-     raise HTTPException(
+        return jsonable_encoder(response)
+    raise HTTPException(
           status_code=status.HTTP_400_BAD_REQUEST,
           detail="Invalid username or password"
           )
@@ -79,6 +99,9 @@ async def login(user: LoginModel, Authorize:AuthJWT=Depends()):
 # refresh token route
 @auth_route.get('/refresh')
 async def refresh(Authorize:AuthJWT=Depends()):
+    """# This endpoint creates a acess token
+    This would require a refresh token
+    """
     try:
         Authorize.jwt_refresh_token_required()
     except Exception as e:
