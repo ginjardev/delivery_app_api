@@ -19,7 +19,7 @@ MarkupSafe==2.1.5
 orjson==3.9.15
 psycopg2==2.9.9
 psycopg2-binary==2.9.9
-pydantic==1.7.4
+pydantic==1.8.1
 pydantic-extra-types==2.6.0
 pydantic-settings==2.2.1
 pydantic_core==2.16.3
